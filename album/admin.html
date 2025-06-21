@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>家庭相册生成页面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media screen and (min-width: 1024px) {
+            .form-container {
+                width: 1800px; /* 增加宽度 */
+                max-width: 100%;
+                margin: 0 auto;
+                padding: 3rem; /* 增加内边距 */
+            }
+            .form-group {
+                margin-bottom: 1.5rem;
+            }
+            .form-group label {
+                display: block;
+                margin-bottom: 0.5rem;
+                font-weight: bold; /* 增加标签的字体粗细 */
+            }
+            .form-group input,
+            .form-group textarea,
+            .form-group select {
+                width: 100%;
+                padding: 0.75rem;
+                border: 1px solid #e2e8f0; /* 更现代的边框颜色 */
+                border-radius: 0.5rem; /* 更现代的边框半径 */
+                background-color: #f9fafb; /* 更现代的背景颜色 */
+            }
+            .form-group textarea {
+                height: 120px; /* 增加文本区域的高度 */
+            }
+            .form-group button {
+                padding: 0.75rem 1.5rem;
+                border: none;
+                border-radius: 0.5rem;
+                background-color: #2563eb; /* 更现代的背景颜色 */
+                color: white;
+                cursor: pointer;
+                font-weight: bold; /* 增加按钮的字体粗细 */
+            }
+            .form-group button:hover {
+                background-color: #1d4ed8; /* 更现代的悬停背景颜色 */
+            }
+            .custom-input {
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+<div class="form-container bg-white rounded-lg shadow-lg p-4">
+    <h2 class="text-2xl font-bold mb-6 text-gray-800" id="html-title">家庭相册生成页面</h2>
+    <form id="form" onsubmit="event.preventDefault(); submitForm();">
+        <div class="form-group">
+            <label for="title">标题:</label>
+            <input type="text" id="title" name="title" value="Family Album" class="form-input">
+        </div>
+        <div class="form-group">
+            <label for="keywords">关键字:</label>
+            <input type="text" id="keywords" name="keywords" value="family, album, pictures, family pictures" class="form-input">
+        </div>
+        <div class="form-group">
+            <label for="description">描述:</label>
+            <textarea id="description" name="description" class="form-input">Family album is a collection of family pictures.</textarea>
+        </div>
+        <div class="form-group">
+            <label for="prefix">图片前缀URL:</label>
+            <input type="text" id="prefix" name="prefix" value="/photos/" class="form-input">
+        </div>
+        <div class="form-group">
+            <label for="filePaths">文件路径:</label>
+            <input type="text" id="filePaths" name="filePaths" value="../photos/" class="form-input">
+        </div>
+        <div class="form-group">
+            <label for="quality">图片质量处理: (存在OSS上可以配置)</label>
+            <select id="qualitySelect" name="qualitySelect" class="form-input" onchange="updateQuality()">
+                <option value="default">默认</option>
+                <option value="width_900_quality_80">标准（900宽/80质量）</option>
+                <option value="width_500_quality_60">快速（500宽/60质量）</option>
+                <option value="width_1800_quality_100">高清（1800宽/100质量）</option>
+                <option value="custom">自定义</option>
+            </select>
+            <input type="text" id="customOssParam" name="customOssParam" value="" class="form-input custom-input" placeholder="例如 ?x-oss-process=image/resize,w_640/quality,q_90" oninput="updateQuality()">
+        </div>
+        <div class="form-group">
+            <label for="htmlFilePaths">保存html文件路径:</label>
+            <input type="text" id="htmlFilePaths" name="htmlFilePaths" value="../cache/index.html" class="form-input">
+        </div>
+        <div class="form-group">
+            <input type="hidden" id="quality" name="quality" value="width_500_quality_60">
+            <input type="submit" value="保存更改" class="form-button">
+        </div>
+    </form>
+</div>
+
+<script>
+
+    //  如果get存在cachename 取出cacheName的值，否则取出默认值
+    const cacheName = new URLSearchParams(window.location.search).get('cachename') || 'default';
+    if (cacheName === 'default') {
+        console.log('使用默认缓存名称');
+    } else {
+        // 修改html-title">家庭相册生成页面
+        document.getElementById('html-title').textContent = '家庭相册生成页面-' + cacheName;
+        //标题:
+        document.getElementById('title').value = 'Family Album-' + cacheName;
+        //关键字:
+        document.getElementById('keywords').value = 'family, album, pictures, family pictures,' + cacheName;
+        //描述:
+        document.getElementById('description').value = 'Family album is a collection of family pictures,' + cacheName;
+        document.getElementById('htmlFilePaths').value = '../cache/' + cacheName + '.html';
+    }
+
+
+    // 监听select的change事件
+    function updateQuality() {
+
+        const selectElement = document.getElementById('qualitySelect');
+        const customInput = document.getElementById('customOssParam');
+        const qualityInput = document.getElementById('quality');
+
+        // 获取选中的option的text内容
+        const quality = selectElement.textContent;
+        if (selectElement.value === 'custom') {
+            qualityInput.value = customInput.value;
+        } else {
+            qualityInput.value = selectElement.value;
+
+            customInput.value = ''; // 清空自定义输入框
+        }
+    }
+
+    function submitForm() {
+        var formData = new FormData(document.getElementById('form'));
+        fetch('admin.php', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.text())
+            .then(data => {
+                alert('操作成功: ' + data);
+                // 获取htmlFilePaths的值，并跳转到该页面
+                location.href = document.getElementById('htmlFilePaths').value;
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
+    // 初始更新 quality 隐藏字段
+    updateQuality();
+</script>
+</body>
+</html>

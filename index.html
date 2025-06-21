@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>家庭相册 MVP</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+        body{background:#f9f9fa;font-family:sans-serif;}
+        .album{max-width:100%;width:1800px;margin:30px auto;}
+        .album-title{font-size:2rem;text-align:center;color:#b83e7b;}
+        .album-phrase{margin:30px 0;text-align:center;color:#555;}
+        .photos{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:22px;}
+        .photo-card{background:#fff;border-radius:18px;box-shadow:0 2px 12px #0001;padding:14px;text-align:center;}
+        .photo-card img{max-width:100%;border-radius:12px;object-fit:cover;}
+        .photo-desc{margin:10px 0 0 0;color:#999;}
+        .photo-date{font-size:13px;color:#bbb;margin-top:3px;}
+        a{text-decoration:none;}
+    </style>
+</head>
+<body>
+<div class="album">
+    <div class="album-title">👨‍👩‍👧‍👦 家庭相册</div>
+
+    <button><a onclick="generate_album()">生成相册数据：来自photons目录</a><b></b></button>
+    <script>
+        // ajax /gen_json.php 返回值给后面的b
+        function generate_album(){
+            fetch('/gen_json.php').then(res=>res.text()).then(txt=>{
+                document.querySelector('button b').textContent = txt;
+                // 3秒后刷新页面
+                setTimeout(()=>location.reload(),3000);
+            }).catch(_=>{document.querySelector('button b').textContent = "生成失败";});
+        }
+        </script>
+
+    <div class="album-phrase" id="phrase">加载中...</div>
+    <div class="photos" id="photos"></div>
+</div>
+<script>
+    // 加载一言
+    fetch('get_phrase.php').then(res=>res.text()).then(txt=>{
+        document.getElementById('phrase').textContent = txt;
+    }).catch(_=>{document.getElementById('phrase').textContent = "有爱的照片，无需多言~";});
+
+    // 加载图片列表
+    fetch('photos.json').then(r=>r.json()).then(list=>{
+        let html = '';
+        list.forEach(item=>{
+            html += `<a href="${item.link}" target="_blank"><div class="photo-card">
+                <img src="${item.src}" alt="${item.title}">
+                <div class="photo-desc">${item.desc||''}</div>
+                <div class="photo-date">${item.date||''}</div>
+            </div></a>`;
+        });
+        document.getElementById('photos').innerHTML = html;
+    });
+</script>
+</body>
+</html>
