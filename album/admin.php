@@ -10,7 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $mockData = getMockData($filePaths, $prefix, 'all'); // Mock data for now
 
-    $template = file_get_contents("./album.html"); // 读取模板文件
+    $template = file_get_contents("./album_v2.htmll"); // 读取模板文件 首张图可用时秒显，后续图片分批加载，整个相册区域不会抖动、不会空白、体验顺滑
     $template = str_replace("{{title}}", $title, $template); // 替换标题
     $template = str_replace("{{keywords}}", $keywords, $template); // 替换关键字
     $template = str_replace("{{description}}", $description, $template); // 替换描述

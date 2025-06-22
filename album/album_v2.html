@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>{{title}}</title>
+    <meta name="keywords" content="{{keywords}}">
+    <meta name="description" content="{{description}}">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        .fade-img-enter-active, .fade-img-leave-active {
+            transition: all .7s cubic-bezier(.4,0,.2,1);
+        }
+        .fade-img-enter-from, .fade-img-leave-to {
+            opacity: 0;
+            transform: scale(1.08) rotateZ(-2deg);
+        }
+        .blur-bg {
+            backdrop-filter: blur(16px) brightness(.7);
+            -webkit-backdrop-filter: blur(16px) brightness(.7);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-tr from-rose-100 via-blue-50 to-yellow-100 min-h-screen">
+
+<div id="app" class="w-full h-screen flex flex-col">
+    <!-- 顶部 LOGO + 控制栏 -->
+    <div class="flex justify-between items-center px-12 pt-8 pb-3 gap-6">
+        <h1 class="text-4xl font-bold text-pink-700 drop-shadow-lg flex items-center gap-2">
+            <span class="text-2xl animate-bounce">✨</span>
+        </h1>
+        <!-- 温馨短语顶部垂直居中（绝对居中） -->
+        <div class="flex gap-4">
+            <div class="bg-white/70 backdrop-blur px-8 py-3 rounded-2xl text-2xl font-semibold text-pink-700 shadow-md animate-pulse">
+                {{ currentDesc }}
+            </div>
+        </div>
+        <div class="flex gap-4 items-center">
+            <button @click="toggleAuto"
+                    class="bg-blue-400 text-white px-5 py-2 rounded-2xl shadow hover:bg-blue-600 text-lg">
+                {{ playing ? '暂停' : '自动播放' }}
+            </button>
+            <div class="flex items-center gap-2 hidden">
+                <span class="text-sm text-gray-500">OSS压缩</span>
+                <select v-model="ossParam" class="rounded-xl px-3 py-1 bg-white border border-gray-300 text-gray-700 shadow">
+                    <option v-for="item in ossOptions" :value="item.value">{{ item.label }}</option>
+                </select>
+                <input v-if="ossParam==='CUSTOM'" v-model="customOssParam" class="rounded-xl px-2 py-1 w-56 text-xs border border-pink-200" placeholder="例如 ?x-oss-process=image/resize,w_640/quality,q_90">
+            </div>
+        </div>
+    </div>
+    <!-- 大图幻灯片区 -->
+    <div class="relative flex-1 flex items-center justify-center overflow-hidden">
+        <!-- 背景模糊层 -->
+        <div class="absolute inset-0 blur-bg z-0" :style="bgImgStyle"></div>
+        <!-- 幻灯片大图加 loading 动画和懒加载 -->
+        <transition name="fade-img" mode="out-in">
+            <a
+                    :href="currentImg.link"
+                    target="_blank"
+                    style="display: inline-block;"
+                    :key="currentImg.img+ossUrl(currentImg.img, finalOssParam)"
+                    class="relative"
+            >
+                <img
+                        :src="ossUrl(currentImg.img, finalOssParam)"
+                        :alt="currentImg.desc"
+                        class="max-h-[70vh] max-w-[80vw] rounded-[2.5rem] shadow-2xl z-10 border-8 border-white object-contain bg-white/40"
+                        loading="lazy"
+                        @load="imgLoading = false"
+                        style="transition: filter .3s"
+                        :style="{ filter: imgLoading ? 'blur(10px) brightness(0.85)' : 'none' }"
+                />
+                <div v-if="imgLoading"
+                     class="absolute inset-0 flex items-center justify-center z-20">
+                    <div class="w-16 h-16 border-4 border-pink-300 border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            </a>
+        </transition>
+        <!-- 左右切换箭头 -->
+        <button @click="prev"
+                class="absolute left-4 top-1/2 -translate-y-1/2 text-4xl text-blue-500 hover:scale-125 transition z-20 select-none bg-white/40 rounded-full p-2 shadow-lg">
+            ‹
+        </button>
+        <button @click="next"
+                class="absolute right-4 top-1/2 -translate-y-1/2 text-4xl text-pink-500 hover:scale-125 transition z-20 select-none bg-white/40 rounded-full p-2 shadow-lg">
+            ›
+        </button>
+        <!-- 气球彩带装饰 -->
+        <span class="absolute left-10 top-10 text-5xl animate-bounce z-30">🎈</span>
+        <span class="absolute right-16 bottom-12 text-4xl animate-bounce delay-1000 z-30">🎉</span>
+    </div>
+    <!-- 缩略图横排 -->
+    <div class="w-full flex justify-center items-center gap-4 py-5 bg-white/60 shadow-inner overflow-x-auto">
+        <div class="flex gap-4">
+            <img
+                    v-for="(img, idx) in images"
+                    :key="img.img+ossUrl(img.img, finalOssParam)"
+                    :src="ossUrl(img.img, finalOssParam)"
+                    :alt="img.desc"
+                    class="w-24 h-16 rounded-2xl object-cover border-4 cursor-pointer transition-all hover:scale-110"
+                    :class="{'border-blue-500 ring-4 ring-pink-300': idx===currentIndex, 'border-white': idx!==currentIndex}"
+                    @click="goto(idx)"
+                    loading="lazy"
+            />
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, computed, onMounted, watch } = Vue;
+    const ossConfig = {
+        defaultParam: "{{x_oss_process}}",
+        options: [
+            { label: "无", value: "" },
+            { label: "标准（900宽/80质量）", value: "?x-oss-process=image/resize,w_900/quality,q_80" },
+            { label: "快速（500宽/60质量）", value: "?x-oss-process=image/resize,w_500/quality,q_60" },
+            { label: "高清（1800宽/100质量）", value: "?x-oss-process=image/resize,w_1800/quality,q_100" },
+            { label: "自定义", value: "CUSTOM" }
+        ]
+    };
+
+    // mock异步请求图片列表
+    function fetchImages() {
+        return new Promise(resolve => {
+            setTimeout(() => {
+                resolve(
+                    {{mockData}}
+            );
+            }, 300);
+        });
+    }
+
+    // 检查单张图片能否加载，返回 Promise<boolean>
+    function checkImage(url) {
+        return new Promise(resolve => {
+            url = url.replace(/\+/g, "%20");
+            url = decodeURIComponent(url);
+            const img = new window.Image();
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+            img.src = url;
+        });
+    }
+
+    // 拼接 OSS 参数
+    function ossUrl(url, param) {
+        if (!url) return '';
+        url = url.replace(/\+/g, "%20");
+        if (url.includes("?x-oss-process")) return url;
+        return url + (param || "");
+    }
+
+    createApp({
+        setup() {
+            const images = ref([]);
+            const lostImages = ref([]);
+            const ossParam = ref(ossConfig.defaultParam);
+            const ossOptions = ossConfig.options;
+            const customOssParam = ref("");
+            const imgLoading = ref(true);
+            const currentIndex = ref(0);
+            const playing = ref(true);
+            const timer = ref(null);
+
+            // 当前OSS最终参数
+            const finalOssParam = computed(() => {
+                if (ossParam.value === "CUSTOM") {
+                    let str = customOssParam.value.trim();
+                    if (!str) return "";
+                    if (str[0] !== "?") str = "?" + str;
+                    return str;
+                }
+                return ossParam.value;
+            });
+
+            // 用于重新检测全部图片（压缩参数变了可重新批量检测）
+            async function filterValidImages(list) {
+                let valid = [];
+                let invalid = [];
+                let promises = list.map(async img => {
+                    const url = ossUrl(img.img, finalOssParam.value);
+                    const ok = await checkImage(url);
+                    if (ok) {
+                        valid.push(img);
+                    } else {
+                        invalid.push(img);
+                    }
+                });
+                await Promise.all(promises);
+                images.value = valid;
+                lostImages.value = invalid;
+                if (invalid.length > 0) {
+                    console.warn("无法加载图片：");
+                    invalid.forEach(item => console.warn(item.img));
+                }
+                console.log(`共${valid.length + invalid.length}张图片，可用${valid.length}张，失效${invalid.length}张`);
+                // 索引校正
+                if (currentIndex.value >= valid.length) {
+                    currentIndex.value = valid.length > 0 ? valid.length - 1 : 0;
+                }
+            }
+
+            // 新增分批加载图片，先显示首张，后续分批push
+            async function filterValidImagesBatch(list) {
+                let valid = [];
+                let invalid = [];
+                // 先检测首张
+                if (list.length === 0) {
+                    images.value = [];
+                    lostImages.value = [];
+                    return;
+                }
+                const firstImg = list[0];
+                const firstUrl = ossUrl(firstImg.img, finalOssParam.value);
+                const firstOk = await checkImage(firstUrl);
+                if (firstOk) {
+                    valid.push(firstImg);
+                } else {
+                    invalid.push(firstImg);
+                }
+                images.value = valid;
+                lostImages.value = invalid;
+                if (invalid.length > 0) {
+                    console.warn("无法加载图片：");
+                    invalid.forEach(item => console.warn(item.img));
+                }
+                // 索引校正
+                if (currentIndex.value >= valid.length) {
+                    currentIndex.value = valid.length > 0 ? valid.length - 1 : 0;
+                }
+                // 之后分批检测剩余图片，300ms间隔逐个push
+                let idx = 1;
+                function loadNext() {
+                    if (idx >= list.length) {
+                        console.log(`共${valid.length + invalid.length}张图片，可用${valid.length}张，失效${invalid.length}张`);
+                        return;
+                    }
+                    const img = list[idx];
+                    const url = ossUrl(img.img, finalOssParam.value);
+                    checkImage(url).then(ok => {
+                        if (ok) {
+                            valid.push(img);
+                            images.value = [...valid];
+                        } else {
+                            invalid.push(img);
+                            lostImages.value = [...invalid];
+                            console.warn("无法加载图片：", img.img);
+                        }
+                        idx++;
+                        setTimeout(loadNext, 300);
+                    });
+                }
+                setTimeout(loadNext, 300);
+            }
+
+            // 当前显示图片
+            const currentImg = computed(() => images.value[currentIndex.value] || {});
+            const currentDesc = computed(() => currentImg.value.desc || '');
+            const bgImgStyle = computed(() => ({
+                backgroundImage: currentImg.value.img ? `url(${ossUrl(currentImg.value.img, finalOssParam.value)})` : '',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+            }));
+
+            // 幻灯片切换
+            function next() {
+                currentIndex.value = (currentIndex.value + 1) % images.value.length;
+            }
+            function prev() {
+                currentIndex.value = (currentIndex.value - 1 + images.value.length) % images.value.length;
+            }
+            function goto(idx) {
+                currentIndex.value = idx;
+            }
+            function toggleAuto() {
+                playing.value ? stopAuto() : startAuto();
+            }
+            function startAuto() {
+                timer.value && clearInterval(timer.value);
+                timer.value = setInterval(() => next(), 5000);
+                playing.value = true;
+            }
+            function stopAuto() {
+                timer.value && clearInterval(timer.value);
+                playing.value = false;
+            }
+
+            // 监听参数变化重新检测
+            watch(finalOssParam, () => {
+                fetchImages().then(filterValidImagesBatch);
+            });
+
+            // 首次加载
+            onMounted(async () => {
+                let list = await fetchImages();
+                await filterValidImagesBatch(list);
+                startAuto();
+            });
+
+            // 键盘操作
+            function onKey(e) {
+                if (e.code === 'ArrowLeft') prev();
+                if (e.code === 'ArrowRight') next();
+                if (e.code === 'Space') toggleAuto();
+            }
+            onMounted(() => {
+                window.addEventListener('keydown', onKey);
+            });
+
+            // 幻灯片图片懒加载loading动画
+            watch([currentIndex, finalOssParam], () => {
+                imgLoading.value = true;
+                if (!playing.value) return;
+                stopAuto(); startAuto();
+            });
+
+            return {
+                images, lostImages, currentImg, currentDesc, currentIndex, playing,
+                next, prev, goto, toggleAuto, bgImgStyle, imgLoading,
+                ossParam, ossOptions, customOssParam, finalOssParam,
+                ossUrl
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
