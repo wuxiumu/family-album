@@ -137,6 +137,8 @@
     // 检查单张图片能否加载，返回 Promise<boolean>
     function checkImage(url) {
         return new Promise(resolve => {
+            url = url.replace(/\+/g, "%20");
+            url = decodeURIComponent(url);
             const img = new window.Image();
             img.onload = () => resolve(true);
             img.onerror = () => resolve(false);
@@ -146,8 +148,8 @@
 
     // 拼接 OSS 参数
     function ossUrl(url, param) {
-        url = decodeURIComponent(url);
         if (!url) return '';
+        url = url.replace(/\+/g, "%20");
         if (url.includes("?x-oss-process")) return url;
         return url + (param || "");
     }

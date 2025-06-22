@@ -21,7 +21,7 @@
 <div class="album">
     <div class="album-title">👨‍👩‍👧‍👦 家庭相册</div>
 
-    <button><a onclick="generate_album()">生成相册数据：来自photons目录</a><b></b></button>
+    <button><a onclick="generate_album()">生成相册数据：来自photos目录</a><b></b></button>
     <script>
         // ajax /gen_json.php 返回值给后面的b
         function generate_album(){
@@ -42,7 +42,8 @@
         document.getElementById('phrase').textContent = txt;
     }).catch(_=>{document.getElementById('phrase').textContent = "有爱的照片，无需多言~";});
 
-    // 加载图片列表
+    // 加载图片列表 随机数
+    var photosUrl = '/gen_photos.php'+'?'+Math.random();
     fetch('photos.json').then(r=>r.json()).then(list=>{
         let html = '';
         list.forEach(item=>{

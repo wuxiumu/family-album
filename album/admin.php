@@ -72,6 +72,7 @@ function getMockData($filePaths, $prefix, $type = 'all') {
             if (isset($imageInfo[0]) && isset($imageInfo[1])) {
                 $imageWidth = $imageInfo[0];
                 $imageHeight = $imageInfo[1];
+                $file =  rawurlencode($file);
                 $imgUrl = $prefix . $file;
                 $data_item = ["id" => $i++, "url" => $imgUrl, "img" => $imgUrl, "desc" => getRandomFamilyQuote()];
                 $data['all'][] = $data_item;
