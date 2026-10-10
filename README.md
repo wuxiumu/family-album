@@ -57,6 +57,16 @@ family-album/
 
 ---
 
+
+## 冒烟自检
+
+```bash
+bash scripts/smoke.sh
+```
+
+本地：`php -S 127.0.0.1:8080 -t .` 后打开首页 / `album/album.html`。
+
+
 ## 🛠 主要功能
 
 - **自动扫描照片**：php 脚本一键生成数据，无需繁琐维护
