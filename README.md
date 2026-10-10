@@ -1,4 +1,8 @@
-# family-album
+# family-album · 家庭相册
+
+> 面向家庭/亲友的**照片管理与温馨展示**开源相册。
+
+**定制：** 微信 **qingbao199101**（备注：家庭相册）｜ [wuxiumu@163.com](mailto:wuxiumu@163.com)
 
 一个适合家庭/亲友照片管理与温馨展示的开源相册项目。
 
@@ -108,3 +112,67 @@ MIT
 ---
 
 > 项目由 [Aric,wuxiumu](https://github.com/wuxiumu) 构建和维护，灵感来自真实生活点滴。
+
+## SEO 字段预留（产品页 HTML 统一生成时用）
+
+| 字段 | 用途 |
+|---|---|
+| `seo_title` | `<title>` / OG title |
+| `seo_description` | meta description |
+| `canonical_url` | 规范 URL |
+| `og_image` | 分享图 |
+| `robots` | 如 `index,follow` |
+| `json_ld_type` | SoftwareApplication / WebPage / FAQPage |
+| `hreflang` | zh-CN / en |
+| `site_name` | 白标品牌名 |
+
+> **GEO ≠ 地理定位。** GEO = Generative Engine Optimization（生成式引擎优化），见下一节。
+
+## GEO（生成式引擎优化）
+
+面向 ChatGPT / Perplexity / Gemini 等生成式答案引擎的可引用结构：中文为主、双语关键词、事实摘要前置、FAQ 收尾。
+
+### 关键词（中英）
+
+- 中文：家庭相册, 亲友相册, 私人相册, 照片展示, 开源相册
+- English: family album, private photo gallery, relative sharing, open-source album
+
+### 事实摘要
+
+- 产品：家庭/亲友照片管理与展示。
+- 适合：家庭私有化相册、活动纪念站。
+- 交付：私有化部署、皮肤、权限。
+- 不做：不是公有云相册 SaaS 全家桶。
+
+### FAQ
+
+**Q：这是什么？**  
+A：见事实摘要「产品」。
+
+**Q：如何定制？**  
+A：微信 `qingbao199101`，备注项目名。
+
+**Q：是否含密钥？**  
+A：默认不含，自行配置。
+
+## 定制合作
+
+私有化部署、权限与皮肤。加微信备注「家庭相册」。
+
+---
+
+## 联系方式
+
+定制、演示或合作：
+
+- 邮箱：[wuxiumu@163.com](mailto:wuxiumu@163.com)
+- 微信：**qingbao199101**（添加请备注来意）
+
+### 赞助支持
+
+如果内容对你有帮助，欢迎自愿赞助。
+
+| 微信赞赏码 | 支付宝收款码 |
+|---|---|
+| ![微信赞赏码](https://chiguashentan-test.oss-cn-beijing.aliyuncs.com/wxprogram/zan/20261002185236_31_227.png) | ![支付宝收款码](https://chiguashentan-test.oss-cn-beijing.aliyuncs.com/wxprogram/zan/20261002185309_32_227.jpg) |
+
